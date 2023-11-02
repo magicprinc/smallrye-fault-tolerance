@@ -1,7 +1,6 @@
 package io.smallrye.faulttolerance.standalone;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 import io.smallrye.faulttolerance.api.CircuitBreakerMaintenance;
@@ -12,7 +11,6 @@ import io.smallrye.faulttolerance.core.apiimpl.BuilderEagerDependencies;
 import io.smallrye.faulttolerance.core.apiimpl.BuilderLazyDependencies;
 import io.smallrye.faulttolerance.core.apiimpl.FaultToleranceImpl;
 import io.smallrye.faulttolerance.core.event.loop.EventLoop;
-import io.smallrye.faulttolerance.core.timer.ThreadTimer;
 import io.smallrye.faulttolerance.core.timer.Timer;
 
 public class StandaloneFaultToleranceSpi implements FaultToleranceSpi {
@@ -29,9 +27,9 @@ public class StandaloneFaultToleranceSpi implements FaultToleranceSpi {
         boolean ftEnabled = !"false".equals(System.getProperty("MP_Fault_Tolerance_NonFallback_Enabled"));
 
         // TODO let users integrate their own thread pool
-        final ExecutorService executor = Executors.newCachedThreadPool();
+        final ExecutorService executor = Settings.createExecutorService.get();
         final EventLoop eventLoop = EventLoop.get();
-        final Timer timer = new ThreadTimer(executor);
+        final Timer timer = Settings.createTimer.apply(executor);
 
         @Override
         public boolean ftEnabled() {
