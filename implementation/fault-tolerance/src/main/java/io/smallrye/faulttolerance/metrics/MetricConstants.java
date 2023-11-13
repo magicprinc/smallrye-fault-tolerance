@@ -5,6 +5,8 @@ final class MetricConstants {
         // avoid instantiation
     }
 
+    static final String TIMER_QUEUE = "ft.timer.queue";
+
     static final String INVOCATIONS_TOTAL = "ft.invocations.total";
 
     static final String RETRY_CALLS_TOTAL = "ft.retry.calls.total";

@@ -1,5 +1,24 @@
 package io.smallrye.faulttolerance.metrics;
 
+import io.smallrye.faulttolerance.SpecCompatibility;
+import io.smallrye.faulttolerance.api.FaultToleranceSpiAccess;
+import io.smallrye.faulttolerance.config.FaultToleranceOperation;
+import io.smallrye.faulttolerance.core.circuit.breaker.CircuitBreakerEvents;
+import io.smallrye.faulttolerance.core.metrics.MetricsRecorder;
+import io.smallrye.faulttolerance.core.timer.TimerAccess;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
+
+import java.util.function.BooleanSupplier;
+import java.util.function.LongSupplier;
+
 import static io.smallrye.faulttolerance.metrics.MetricConstants.BULKHEAD_CALLS_TOTAL;
 import static io.smallrye.faulttolerance.metrics.MetricConstants.BULKHEAD_EXECUTIONS_RUNNING;
 import static io.smallrye.faulttolerance.metrics.MetricConstants.BULKHEAD_EXECUTIONS_WAITING;
@@ -12,24 +31,7 @@ import static io.smallrye.faulttolerance.metrics.MetricConstants.RATE_LIMIT_CALL
 import static io.smallrye.faulttolerance.metrics.MetricConstants.RETRY_CALLS_TOTAL;
 import static io.smallrye.faulttolerance.metrics.MetricConstants.RETRY_RETRIES_TOTAL;
 import static io.smallrye.faulttolerance.metrics.MetricConstants.TIMEOUT_CALLS_TOTAL;
-
-import java.util.function.BooleanSupplier;
-import java.util.function.LongSupplier;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
-
-import io.smallrye.faulttolerance.SpecCompatibility;
-import io.smallrye.faulttolerance.config.FaultToleranceOperation;
-import io.smallrye.faulttolerance.core.circuit.breaker.CircuitBreakerEvents;
-import io.smallrye.faulttolerance.core.metrics.MetricsRecorder;
+import static io.smallrye.faulttolerance.metrics.MetricConstants.TIMER_QUEUE;
 
 @Singleton
 public class MicroProfileMetricsProvider implements MetricsProvider {
@@ -89,6 +91,21 @@ public class MicroProfileMetricsProvider implements MetricsProvider {
 
     @Inject
     SpecCompatibility specCompatibility;
+
+    @PostConstruct
+    void afterPropertiesSet (){
+        if (metricsEnabled){
+            var faultToleranceSpi = FaultToleranceSpiAccess.get();
+            if (faultToleranceSpi instanceof TimerAccess){
+                var timerAccess = (TimerAccess) faultToleranceSpi;
+                Metadata metadata = Metadata.builder()
+                    .withName(TIMER_QUEUE)
+                    .withUnit(MetricUnits.NONE)
+                    .build();
+                registry.gauge(metadata, timerAccess::countScheduledTasks);
+            }
+        }
+    }
 
     @Override
     public MetricsRecorder create(FaultToleranceOperation operation) {

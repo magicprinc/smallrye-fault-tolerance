@@ -1,5 +1,24 @@
 package io.smallrye.faulttolerance.metrics;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.smallrye.faulttolerance.SpecCompatibility;
+import io.smallrye.faulttolerance.api.FaultToleranceSpiAccess;
+import io.smallrye.faulttolerance.config.FaultToleranceOperation;
+import io.smallrye.faulttolerance.core.circuit.breaker.CircuitBreakerEvents;
+import io.smallrye.faulttolerance.core.metrics.MetricsRecorder;
+import io.smallrye.faulttolerance.core.timer.TimerAccess;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
+import java.util.function.LongSupplier;
+
 import static io.smallrye.faulttolerance.metrics.MetricConstants.BULKHEAD_CALLS_TOTAL;
 import static io.smallrye.faulttolerance.metrics.MetricConstants.BULKHEAD_EXECUTIONS_RUNNING;
 import static io.smallrye.faulttolerance.metrics.MetricConstants.BULKHEAD_EXECUTIONS_WAITING;
@@ -15,24 +34,7 @@ import static io.smallrye.faulttolerance.metrics.MetricConstants.RETRY_CALLS_TOT
 import static io.smallrye.faulttolerance.metrics.MetricConstants.RETRY_RETRIES_TOTAL;
 import static io.smallrye.faulttolerance.metrics.MetricConstants.TIMEOUT_CALLS_TOTAL;
 import static io.smallrye.faulttolerance.metrics.MetricConstants.TIMEOUT_EXECUTION_DURATION;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
-import java.util.function.LongSupplier;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import io.smallrye.faulttolerance.SpecCompatibility;
-import io.smallrye.faulttolerance.config.FaultToleranceOperation;
-import io.smallrye.faulttolerance.core.circuit.breaker.CircuitBreakerEvents;
-import io.smallrye.faulttolerance.core.metrics.MetricsRecorder;
+import static io.smallrye.faulttolerance.metrics.MetricConstants.TIMER_QUEUE;
 
 @Singleton
 public class MicrometerProvider implements MetricsProvider {
@@ -76,6 +78,17 @@ public class MicrometerProvider implements MetricsProvider {
 
     @Inject
     SpecCompatibility specCompatibility;
+
+    @PostConstruct
+    void afterPropertiesSet (){
+        if (metricsEnabled){
+            var faultToleranceSpi = FaultToleranceSpiAccess.get();
+            if (faultToleranceSpi instanceof TimerAccess){
+                var timerAccess = (TimerAccess) faultToleranceSpi;
+                registry.gauge(TIMER_QUEUE, null, null, nil->timerAccess.countScheduledTasks());
+            }
+        }
+    }
 
     @Override
     public MetricsRecorder create(FaultToleranceOperation operation) {
