@@ -1,7 +1,6 @@
 package io.smallrye.faulttolerance.core.timer;
 
-import static io.smallrye.faulttolerance.core.timer.TimerLogger.LOG;
-import static io.smallrye.faulttolerance.core.util.Preconditions.checkNotNull;
+import io.smallrye.faulttolerance.core.util.RunnableWrapper;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -12,7 +11,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
-import io.smallrye.faulttolerance.core.util.RunnableWrapper;
+import static io.smallrye.faulttolerance.core.timer.TimerLogger.LOG;
+import static io.smallrye.faulttolerance.core.util.Preconditions.checkNotNull;
 
 /**
  * Starts one thread that processes submitted tasks in a loop and when it's time for a task to run,
@@ -154,7 +154,7 @@ public final class ThreadTimer implements Timer {
         }
     }
 
-    private static class Task implements TimerTask, Runnable {
+    private static class Task implements TimerTask, Runnable, TimerTaskSpi {
         // scheduled: present in the `tasks` queue
         // running: not present in the `tasks` queue && `runnable != null`
         // finished or cancelled: not present in the `tasks` queue && `runnable == null`
@@ -208,6 +208,22 @@ public final class ThreadTimer implements Timer {
             } finally {
                 runnable = null;
             }
+        }
+
+        @Override
+        public TimerTask reschedule (long delayInMillis, Runnable command){
+            ThreadTimer timer = INSTANCE;
+            if (timer != null){
+                if (delayInMillis <= 0){ // scheduleWithFixedDelay
+                    return timer.schedule(-delayInMillis, command, executor());
+
+                } else {// > 0 scheduleAtFixedRate
+                    // delayInMillis{period} - (nanoTime - startTime) + nanoTime == delayInMillis{period} + startTime
+                    long timePassedSinceStart = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+                    return timer.schedule(delayInMillis - timePassedSinceStart, command, executor());
+                }
+            }
+            return null;
         }
     }
 
