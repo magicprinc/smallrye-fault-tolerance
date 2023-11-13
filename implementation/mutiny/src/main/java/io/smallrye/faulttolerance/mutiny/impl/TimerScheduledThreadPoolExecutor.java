@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
@@ -160,13 +161,13 @@ public class TimerScheduledThreadPoolExecutor implements ScheduledExecutorServic
 
         @Override
         public boolean isCancelled (){
-            return task == null ;
+            return task == null;
         }
 
         @Override
         public boolean isDone (){
             var t = task;
-            return t != null && t.isDone();
+            return t == null || t.isDone(); // canceled or done
         }
     }//ComposedScheduledFutureBase
 
@@ -182,12 +183,18 @@ public class TimerScheduledThreadPoolExecutor implements ScheduledExecutorServic
         }
 
         @Override
-        public T get () throws InterruptedException, ExecutionException{
+        public T get () throws InterruptedException, ExecutionException {
+            if (isCancelled()){
+                throw new CancellationException();
+            }
             return getFuture().get();
         }
 
         @Override
         public T get (long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            if (isCancelled()){
+                throw new CancellationException();
+            }
             return getFuture().get(timeout, unit);
         }
 
@@ -223,6 +230,18 @@ public class TimerScheduledThreadPoolExecutor implements ScheduledExecutorServic
                 getFuture().completeExceptionally(e);
                 SneakyThrow.sneakyThrow(e);
             }
+        }
+
+        @Override
+        public boolean isDone (){
+            if (super.isDone()){
+                return true;
+            }
+            var f = future;
+            if (f != null){
+                return f.isDone();
+            }
+            return false;
         }
     }//ComposedScheduledFuture
 
