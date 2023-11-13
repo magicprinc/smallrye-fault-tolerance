@@ -1,14 +1,5 @@
 package io.smallrye.faulttolerance;
 
-import java.util.concurrent.ExecutorService;
-import java.util.function.Function;
-
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.smallrye.faulttolerance.api.CircuitBreakerMaintenance;
 import io.smallrye.faulttolerance.api.FaultTolerance;
 import io.smallrye.faulttolerance.api.FaultToleranceSpi;
@@ -18,8 +9,16 @@ import io.smallrye.faulttolerance.core.apiimpl.BuilderLazyDependencies;
 import io.smallrye.faulttolerance.core.apiimpl.FaultToleranceImpl;
 import io.smallrye.faulttolerance.core.event.loop.EventLoop;
 import io.smallrye.faulttolerance.core.timer.Timer;
+import io.smallrye.faulttolerance.core.timer.TimerAccess;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-public class CdiFaultToleranceSpi implements FaultToleranceSpi {
+import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
+
+public class CdiFaultToleranceSpi implements FaultToleranceSpi, TimerAccess {
     @Singleton
     public static class EagerDependencies implements BuilderEagerDependencies {
         @Inject
@@ -104,5 +103,10 @@ public class CdiFaultToleranceSpi implements FaultToleranceSpi {
     @Override
     public CircuitBreakerMaintenance circuitBreakerMaintenance() {
         return eagerDependencies().cbMaintenance();
+    }
+
+    @Override
+    public int countScheduledTasks (){
+        return lazyDependencies().timer().countScheduledTasks();
     }
 }

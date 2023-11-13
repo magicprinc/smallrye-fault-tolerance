@@ -1,14 +1,15 @@
 package io.smallrye.faulttolerance.standalone;
 
-import java.util.function.Function;
-
 import io.smallrye.faulttolerance.api.CircuitBreakerMaintenance;
 import io.smallrye.faulttolerance.api.FaultTolerance;
 import io.smallrye.faulttolerance.api.FaultToleranceSpi;
 import io.smallrye.faulttolerance.core.apiimpl.BuilderLazyDependencies;
 import io.smallrye.faulttolerance.core.apiimpl.FaultToleranceImpl;
+import io.smallrye.faulttolerance.core.timer.TimerAccess;
 
-public class StandaloneFaultToleranceSpi implements FaultToleranceSpi {
+import java.util.function.Function;
+
+public class StandaloneFaultToleranceSpi implements FaultToleranceSpi, TimerAccess {
     static class EagerDependenciesHolder {
         static final EagerDependencies INSTANCE = new EagerDependencies();
     }
@@ -42,5 +43,16 @@ public class StandaloneFaultToleranceSpi implements FaultToleranceSpi {
     @Override
     public CircuitBreakerMaintenance circuitBreakerMaintenance() {
         return EagerDependenciesHolder.INSTANCE.cbMaintenance;
+    }
+
+    /**
+     * Provides access to the timer that SmallRye Fault Tolernce internally uses for scheduling
+     * purposes. It provides a read-only view into what the timer is doing.
+     *
+     * @return read-only view into the SmallRye Fault Tolerance timer
+     */
+    @Override
+    public int countScheduledTasks (){
+        return StandaloneFaultTolerance.getLazyDependencies().timer().countScheduledTasks();
     }
 }

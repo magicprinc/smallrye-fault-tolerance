@@ -1,6 +1,5 @@
 package io.smallrye.faulttolerance.standalone;
 
-import io.smallrye.faulttolerance.core.timer.TimerAccess;
 import io.smallrye.faulttolerance.core.util.Preconditions;
 
 /**
@@ -33,17 +32,6 @@ public final class StandaloneFaultTolerance {
         }
         Preconditions.checkNotNull(configuration, "Configuration must be set");
         StandaloneFaultTolerance.configuration = configuration;
-    }
-
-    /**
-     * Provides access to the timer that SmallRye Fault Tolernce internally uses for scheduling
-     * purposes. It provides a read-only view into what the timer is doing.
-     *
-     * @return read-only view into the SmallRye Fault Tolerance timer
-     */
-    public static synchronized TimerAccess timerAccess() {
-        // we should expose timer metrics out of the box, but this will have to do for now
-        return new io.smallrye.faulttolerance.standalone.TimerAccessImpl(getLazyDependencies().timer());
     }
 
     /**

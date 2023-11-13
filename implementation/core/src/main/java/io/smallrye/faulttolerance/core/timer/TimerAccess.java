@@ -1,4 +1,4 @@
-package io.smallrye.faulttolerance.standalone;
+package io.smallrye.faulttolerance.core.timer;
 
 /**
  * Provides read-only view into the SmallRye Fault Tolerance timer.

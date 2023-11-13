@@ -19,6 +19,4 @@ public interface FaultToleranceSpi {
     <T, R> FaultTolerance.Builder<T, R> newAsyncBuilder(Class<?> asyncType, Function<FaultTolerance<T>, R> finisher);
 
     CircuitBreakerMaintenance circuitBreakerMaintenance();
-
-    TimerAccess timerAccess();
 }
