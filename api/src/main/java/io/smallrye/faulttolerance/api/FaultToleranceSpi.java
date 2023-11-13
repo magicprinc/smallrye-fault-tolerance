@@ -1,8 +1,8 @@
 package io.smallrye.faulttolerance.api;
 
-import java.util.function.Function;
-
 import io.smallrye.common.annotation.Experimental;
+
+import java.util.function.Function;
 
 /**
  * This is an internal API. It may change incompatibly without notice.
@@ -19,4 +19,6 @@ public interface FaultToleranceSpi {
     <T, R> FaultTolerance.Builder<T, R> newAsyncBuilder(Class<?> asyncType, Function<FaultTolerance<T>, R> finisher);
 
     CircuitBreakerMaintenance circuitBreakerMaintenance();
+
+    TimerAccess timerAccess();
 }

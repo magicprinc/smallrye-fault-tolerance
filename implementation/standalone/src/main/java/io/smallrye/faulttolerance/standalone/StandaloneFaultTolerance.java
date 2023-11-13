@@ -1,5 +1,6 @@
 package io.smallrye.faulttolerance.standalone;
 
+import io.smallrye.faulttolerance.core.timer.TimerAccess;
 import io.smallrye.faulttolerance.core.util.Preconditions;
 
 /**
@@ -42,7 +43,7 @@ public final class StandaloneFaultTolerance {
      */
     public static synchronized TimerAccess timerAccess() {
         // we should expose timer metrics out of the box, but this will have to do for now
-        return new TimerAccessImpl(getLazyDependencies().timer());
+        return new io.smallrye.faulttolerance.standalone.TimerAccessImpl(getLazyDependencies().timer());
     }
 
     /**
