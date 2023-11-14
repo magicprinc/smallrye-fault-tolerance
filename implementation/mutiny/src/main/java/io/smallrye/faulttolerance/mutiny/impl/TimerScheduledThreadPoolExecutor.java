@@ -339,6 +339,7 @@ public class TimerScheduledThreadPoolExecutor implements ScheduledExecutorServic
 
     static final class ExecutorServiceWrapper extends AbstractExecutorService {
         private final Executor targetExecutor;
+        private volatile boolean open = true;
 
         public ExecutorServiceWrapper (Executor targetExecutor){
             this.targetExecutor = targetExecutor;
@@ -349,14 +350,16 @@ public class TimerScheduledThreadPoolExecutor implements ScheduledExecutorServic
         }
 
         @Override public void shutdown (){
+            open = false;
         }
 
         @Override public List<Runnable> shutdownNow (){
+            shutdown();
             return Collections.emptyList();
         }
 
         @Override public boolean isShutdown (){
-            return false;
+            return !open;
         }
 
         @Override public boolean isTerminated (){
